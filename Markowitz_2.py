@@ -9,6 +9,7 @@ import quantstats as qs
 import gurobipy as gp
 import warnings
 import argparse
+import cvxpy as cp
 
 """
 Project Setup
@@ -66,21 +67,35 @@ class MyPortfolio:
         # Get the assets by excluding the specified column
         assets = self.price.columns[self.price.columns != self.exclude]
 
-        # Calculate the portfolio weights
-        self.portfolio_weights = pd.DataFrame(
-            index=self.price.index, columns=self.price.columns
-        )
+        # Calculate the expected returns and covariance matrix
+        expected_returns = self.returns.mean()
+        cov_matrix = self.returns.cov()
 
-        """
-        TODO: Complete Task 4 Below
-        """
+        # Define optimization variables
+        weights = cp.Variable(len(assets))
 
-        """
-        TODO: Complete Task 4 Above
-        """
+        # Define objective function (portfolio return)
+        objective = cp.Maximize(expected_returns.values @ weights)
 
-        self.portfolio_weights.ffill(inplace=True)
-        self.portfolio_weights.fillna(0, inplace=True)
+        # Define constraints
+        constraints = [
+            cp.sum(weights) == 1,  # Sum of weights equals 1 (fully invested)
+            weights >= 0  # No short selling (non-negative weights)
+        ]
+
+        # Define problem
+        problem = cp.Problem(objective, constraints)
+
+        # Solve problem
+        problem.solve()
+
+        # Get optimized weights
+        optimized_weights = pd.Series(weights.value, index=assets)
+
+        # Assign optimized weights to the portfolio weights DataFrame
+        self.portfolio_weights = pd.DataFrame(index=self.price.index, columns=self.price.columns)
+        for asset in assets:
+            self.portfolio_weights[asset] = 0 if asset == self.exclude else optimized_weights[asset]
 
     def calculate_portfolio_returns(self):
         # Ensure weights are calculated

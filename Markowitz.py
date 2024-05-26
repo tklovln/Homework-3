@@ -66,6 +66,9 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
+        equal_weight = 1 / len(assets)
+        self.portfolio_weights[assets] = equal_weight
+        self.portfolio_weights[self.exclude] = 0
 
         """
         TODO: Complete Task 1 Above
@@ -110,13 +113,44 @@ class RiskParityPortfolio:
     def calculate_weights(self):
         # Get the assets by excluding the specified column
         assets = df.columns[df.columns != self.exclude]
-
+        # print(len(assets))
         # Calculate the portfolio weights
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
-
+        
         """
         TODO: Complete Task 2 Below
         """
+        
+        for i in range(self.lookback+1, len(df)):
+            
+            window_returns = df_returns[assets].iloc[i - self.lookback : i]
+            
+
+            volatilities = window_returns.std()
+            # volatilities = np.std(window_returns, axis=0)
+            # xlb = window_returns["XLB"]
+            # print(xlb)
+            # print(np.std(xlb), volatilities)
+            # print(window_returns)
+            # print(volatilities)
+            # if i%100 ==0 :
+            #     print(volatilities)
+            inverse_vol = 1 / volatilities
+
+            # Handle division by zero
+            # inverse_vol = inverse_vol.replace([np.inf, -np.inf], np.nan)  # Replace infinite values with NaN
+            # inverse_vol.fillna(1e-10, inplace=True)
+            # print(inverse_vol, inverse_vol.sum())
+            
+            weights = inverse_vol / inverse_vol.sum()
+            # print(weights)
+            # sbreak
+
+            # print("weights:", weights)
+
+            self.portfolio_weights.loc[df.index[i], assets] = weights
+
+        # self.portfolio_weights[self.exclude] = 0
 
         """
         TODO: Complete Task 2 Above
@@ -190,10 +224,19 @@ class MeanVariancePortfolio:
                 TODO: Complete Task 3 Below
                 """
 
-                # Sample Code: Initialize Decision w and the Objective
-                # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                # # Sample Code: Initialize Decision w and the Objective
+                # # NOTE: You can modify the following code
+                # w = model.addMVar(n, name="w", ub=1)
+                # model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+
+                w = model.addMVar(n, name="w", lb=0, ub=1)
+                port_var = w @ Sigma @ w
+                port_ret = mu @ w
+                obj = port_ret - gamma/2 * port_var
+                model.setObjective(obj, gp.GRB.MAXIMIZE)
+
+                # Constraint: Sum of weights should be 1
+                model.addConstr(w.sum() == 1)
 
                 """
                 TODO: Complete Task 3 Below
@@ -401,6 +444,10 @@ class AssignmentJudge:
 
     def check_answer_rp(self, rp_dataframe):
         answer_dataframe = pd.read_pickle(self.rp_path)
+        # print("answer:", answer_dataframe)
+        # print("rp:", rp_dataframe)
+        answer_dataframe.to_csv('answer.csv')
+        rp_dataframe.to_csv('rp.csv')
         if self.compare_dataframe(answer_dataframe, rp_dataframe):
             print("Problem 2 Complete - Get 10 Points")
             return 10
@@ -414,6 +461,8 @@ class AssignmentJudge:
         mv_list_2 = pd.read_pickle(self.mv_list_2_path)
         mv_list_3 = pd.read_pickle(self.mv_list_3_path)
         answer_list = [mv_list_0, mv_list_1, mv_list_2, mv_list_3]
+        # print(answer_list)
+        # print(mv_list)
         if self.compare_dataframe_list(answer_list, mv_list):
             print("Problem 3 Complete - Get 15 points")
             return 15
