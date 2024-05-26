@@ -94,14 +94,15 @@ class MyPortfolio:
     '''
     def calculate_weights(self):
             # Get the assets by excluding the specified column
-            assets = df.columns[df.columns != self.exclude]
+            assets = self.price.columns[df.columns != self.exclude]
 
             # Calculate the portfolio weights
-            self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
+            self.portfolio_weights = pd.DataFrame(index=self.price.index, columns=self.price.columns)
 
-            for i in range(self.lookback + 1, len(df)):
+            print(len(self.price))
+            for i in range(self.lookback + 1, len(self.price)):
                 R_n = self.returns.copy()[assets].iloc[i - self.lookback : i]
-                self.portfolio_weights.loc[df.index[i], assets] = self.mv_opt(
+                self.portfolio_weights.loc[self.price.index[i], assets] = self.mv_opt(
                     R_n, self.gamma
                 )
 
@@ -194,7 +195,7 @@ The following functions will help check your solution.
 class AssignmentJudge:
     def __init__(self):
         self.mp = MyPortfolio(df, "SPY", 300, 0.2).get_results()
-        self.Bmp = MyPortfolio(Bdf, "SPY", 1200, 4.0).get_results()
+        self.Bmp = MyPortfolio(Bdf, "SPY", 230, 0.0000000001).get_results()
 
     def plot_performance(self, price, strategy):
         # Plot cumulative returns
