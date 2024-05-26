@@ -113,7 +113,6 @@ class RiskParityPortfolio:
     def calculate_weights(self):
         # Get the assets by excluding the specified column
         assets = df.columns[df.columns != self.exclude]
-        # print(len(assets))
         # Calculate the portfolio weights
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
         
@@ -124,33 +123,10 @@ class RiskParityPortfolio:
         for i in range(self.lookback+1, len(df)):
             
             window_returns = df_returns[assets].iloc[i - self.lookback : i]
-            
-
             volatilities = window_returns.std()
-            # volatilities = np.std(window_returns, axis=0)
-            # xlb = window_returns["XLB"]
-            # print(xlb)
-            # print(np.std(xlb), volatilities)
-            # print(window_returns)
-            # print(volatilities)
-            # if i%100 ==0 :
-            #     print(volatilities)
             inverse_vol = 1 / volatilities
-
-            # Handle division by zero
-            # inverse_vol = inverse_vol.replace([np.inf, -np.inf], np.nan)  # Replace infinite values with NaN
-            # inverse_vol.fillna(1e-10, inplace=True)
-            # print(inverse_vol, inverse_vol.sum())
-            
             weights = inverse_vol / inverse_vol.sum()
-            # print(weights)
-            # sbreak
-
-            # print("weights:", weights)
-
             self.portfolio_weights.loc[df.index[i], assets] = weights
-
-        # self.portfolio_weights[self.exclude] = 0
 
         """
         TODO: Complete Task 2 Above
